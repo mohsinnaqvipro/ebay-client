@@ -5,7 +5,10 @@ import moment from "moment";
 import { connect } from "react-redux";
 import ReactDatetime from "react-datetime";
 import Animation from "../Animation/index";
-import { getRecords } from "../../actions/ebayActions";
+import { getRecords, dispatchOrder } from "../../actions/ebayActions";
+import uuid from "react-uuid";
+import Notification from "../Notification";
+
 import {
   Card,
   CardHeader,
@@ -29,6 +32,7 @@ class ListRecords extends React.Component {
       rows: [],
       pageSize: 25,
       loading: false,
+      showDispatchedMessage: false,
     };
   }
 
@@ -40,7 +44,8 @@ class ListRecords extends React.Component {
   }
 
   componentDidUpdate(prevProps) {
-    const { records } = this.props;
+    const { records, orderdispatched } = this.props;
+
     if (records.status === true) {
       if (prevProps.records !== records) {
         this.setState({ rows: records.data.orders, loading: false });
@@ -49,6 +54,14 @@ class ListRecords extends React.Component {
     if (records.status === false) {
       if (prevProps.records !== records) {
         this.setState({ rows: records.data, loading: false });
+      }
+    }
+    if (orderdispatched) {
+      if (prevProps.orderdispatched !== orderdispatched) {
+        this.setState({
+          showDispatchedMessage: true,
+          loading: false,
+        });
       }
     }
   }
@@ -84,6 +97,44 @@ class ListRecords extends React.Component {
     });
   };
 
+  handleDispatch = (data) => {
+    this.setState({
+      loading: true,
+    });
+    const token = localStorage.getItem("Token");
+
+    let obj = {
+      orderId: data.orderId,
+      lineItemId: data.lineItems[0].lineItemId,
+      quantity: 1,
+      shippedDate:
+        data.lineItems[0].lineItemFulfillmentInstructions
+          .maxEstimatedDeliveryDate,
+      shippingCarrierCode:
+        data.fulfillmentStartInstructions[0].shippingStep.shippingCarrierCode,
+      trackingNumber: uuid(),
+      token: token,
+    };
+
+    this.props.dispatchOrder(obj);
+  };
+
+  renderDispatchButton(data) {
+    return (
+      <Button
+        className="float-right"
+        size="sm"
+        color="success"
+        type="button"
+        onClick={() => {
+          this.handleDispatch(data);
+        }}
+      >
+        <span className="btn-inner--text">Dispatch</span>
+      </Button>
+    );
+  }
+
   handleCreationDate = (date) => {
     let selectDate = moment(date).format("YYYY-MM-DD");
     if (selectDate === "Invalid date") {
@@ -92,12 +143,31 @@ class ListRecords extends React.Component {
     this.setState({ searchedCreationDate: selectDate });
   };
 
+  isDispatched = () => {
+    const { showDispatchedMessage } = this.state;
+
+    this.setState({
+      showDispatchedMessage: !showDispatchedMessage,
+    });
+  };
+
+  renderDispatchMessage(show) {
+    return (
+      <Notification
+        show={show}
+        hideModal={this.isDispatched}
+        Message="Order Dispatched Succesfully"
+        color="bg-gradient-success"
+      />
+    );
+  }
+
   goBack = (e) => {
     window.history.back();
   };
 
   render() {
-    const { rows } = this.state;
+    const { rows, showDispatchedMessage } = this.state;
     return (
       <>
         <div className="header bg-gradient-info pb-8 pt-5 pt-md-7">
@@ -195,6 +265,7 @@ class ListRecords extends React.Component {
                       <th scope="col">Currency</th>
                       <th scope="col">Payment Status</th>
                       <th scope="col">Creation Date</th>
+                      <th scope="col">Dispatch</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -240,6 +311,11 @@ class ListRecords extends React.Component {
                             {row.creationDate}
                           </div>
                         </td>
+                        <td>
+                          <div className="d-flex align-items-center">
+                            {this.renderDispatchButton(row)}
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
@@ -247,6 +323,9 @@ class ListRecords extends React.Component {
               </Card>
             </div>
           </Row>
+          {showDispatchedMessage
+            ? this.renderDispatchMessage(showDispatchedMessage)
+            : null}
         </Container>
       </>
     );
@@ -258,8 +337,9 @@ ListRecords.propTypes = {};
 const mapStateToProps = (state) => ({
   token: state.authToken.token,
   records: state.ebayRecords.records,
+  orderdispatched: state.dispatchOrder.dispatch,
 });
 
-export default connect(mapStateToProps, { getRecords })(
+export default connect(mapStateToProps, { getRecords, dispatchOrder })(
   withRouter(ListRecords)
 );

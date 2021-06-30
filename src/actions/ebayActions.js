@@ -4,6 +4,7 @@ import {
   GET_ERRORS,
   GET_TOKEN,
   GET_RECORDS,
+  DISPATCH_ORDER,
 } from "../types/types";
 import NetworkInfo from "../network-info";
 
@@ -55,6 +56,25 @@ export const getRecords = (userData) => (dispatch) => {
       dispatch({
         type: GET_RECORDS,
         payload: res.data,
+      });
+    })
+    .catch((err) => {
+      if (err.response) {
+        dispatch({
+          type: GET_ERRORS,
+          payload: err.response.data,
+        });
+      }
+    });
+};
+
+export const dispatchOrder = (userData) => (dispatch) => {
+  axios
+    .post(NetworkInfo.dispatchOrder, userData)
+    .then((res) => {
+      dispatch({
+        type: DISPATCH_ORDER,
+        payload: res,
       });
     })
     .catch((err) => {

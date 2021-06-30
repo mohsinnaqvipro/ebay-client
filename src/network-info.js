@@ -3,6 +3,7 @@ export default class NetworkInfo {
   static loginWithEbay = "http://localhost:3000/users/auth/url";
   static getToken = "http://localhost:3000/users/auth/ouAtuh/token";
   static getRecords = "http://localhost:3000/users/orders";
+  static dispatchOrder = "http://localhost:3000/users/order/dispatch";
   // static getAxios = (token) => {
   //   let axiosInstance = (axios.defaults.headers.common = {
   //     Authorization: token,
