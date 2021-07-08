@@ -19,6 +19,7 @@ import Dashboard from "./components/Dashboard";
 import ListRecords from "./components/ListRecords";
 import Login from "./components/Login";
 import LoginWithEbay from "./components/LoginWithEbay";
+import Register from "./components/Register";
 import Test from "./components/Test";
 
 var routes = [
@@ -27,6 +28,13 @@ var routes = [
     name: "Login",
     icon: "ni ni-key-25 text-info",
     component: Login,
+    layout: "/admin",
+  },
+  {
+    path: "/register",
+    name: "Register New User",
+    icon: "ni ni-key-25 text-info",
+    component: Register,
     layout: "/admin",
   },
   {

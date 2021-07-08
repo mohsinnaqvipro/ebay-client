@@ -1,12 +1,12 @@
 /* eslint-disable jsx-a11y/anchor-is-valid */
 import React from "react";
 import { withRouter } from "react-router-dom";
-import moment from "moment";
 import { connect } from "react-redux";
-import ReactDatetime from "react-datetime";
 import Animation from "../Animation/index";
+import { CSVLink } from "react-csv";
 import { getRecords, dispatchOrder } from "../../actions/ebayActions";
 import uuid from "react-uuid";
+import FilterResults from "react-filter-search";
 import Notification from "../Notification";
 
 import {
@@ -16,31 +16,23 @@ import {
   Container,
   Row,
   FormGroup,
+  Button,
+  Input,
   InputGroup,
   InputGroupAddon,
   InputGroupText,
-  Button,
-  Input,
-  CardFooter,
 } from "reactstrap";
 
 class ListRecords extends React.Component {
   constructor() {
     super();
     this.state = {
-      searchedCreationDate: "",
       rows: [],
       pageSize: 25,
+      value: "",
       loading: false,
       showDispatchedMessage: false,
     };
-  }
-
-  componentDidMount() {
-    const { pageSize } = this.state;
-    const token = localStorage.getItem("Token");
-    this.setState({ loading: true });
-    this.props.getRecords({ limit: pageSize, token });
   }
 
   componentDidUpdate(prevProps) {
@@ -83,7 +75,7 @@ class ListRecords extends React.Component {
   handleSearch = (e) => {
     e.preventDefault();
 
-    const { searchedCreationDate, pageSize } = this.state;
+    const { pageSize } = this.state;
 
     this.setState({
       loading: true,
@@ -92,7 +84,6 @@ class ListRecords extends React.Component {
     const token = localStorage.getItem("Token");
     this.props.getRecords({
       limit: pageSize,
-      date: searchedCreationDate,
       token,
     });
   };
@@ -135,14 +126,6 @@ class ListRecords extends React.Component {
     );
   }
 
-  handleCreationDate = (date) => {
-    let selectDate = moment(date).format("YYYY-MM-DD");
-    if (selectDate === "Invalid date") {
-      selectDate = "";
-    }
-    this.setState({ searchedCreationDate: selectDate });
-  };
-
   isDispatched = () => {
     const { showDispatchedMessage } = this.state;
 
@@ -162,40 +145,39 @@ class ListRecords extends React.Component {
     );
   }
 
+  handleChange = (e) => {
+    this.setState({ value: e.target.value });
+  };
+
   goBack = (e) => {
     window.history.back();
   };
 
   render() {
     const { rows, showDispatchedMessage } = this.state;
+
     return (
       <>
         <div className="header bg-gradient-info pb-8 pt-5 pt-md-7">
           <Container fluid>
+            <div className="col-6">
+              <FormGroup>
+                <InputGroup className="input-group-alternative mb-1">
+                  <InputGroupAddon addonType="prepend">
+                    <InputGroupText>
+                      <i className="fa fa-search" />
+                    </InputGroupText>
+                  </InputGroupAddon>
+                  <Input
+                    placeholder="Filter Records"
+                    type="text"
+                    value={this.state.value}
+                    onChange={this.handleChange}
+                  />
+                </InputGroup>
+              </FormGroup>
+            </div>
             <div className="header-body">
-              <Row>
-                <div className="col-6">
-                  <FormGroup>
-                    <InputGroup className="input-group-alternative">
-                      <InputGroupAddon addonType="prepend">
-                        <InputGroupText>
-                          <i className="ni ni-calendar-grid-58" />
-                        </InputGroupText>
-                      </InputGroupAddon>
-                      <ReactDatetime
-                        inputProps={{
-                          placeholder: "Creation Date",
-                        }}
-                        timeFormat={false}
-                        value={this.state.searchedCreationDate}
-                        onChange={this.handleCreationDate}
-                        locale="en-US"
-                        closeOnSelect
-                      />
-                    </InputGroup>
-                  </FormGroup>
-                </div>
-              </Row>
               <Row>
                 <div className="col">
                   <Button
@@ -254,72 +236,93 @@ class ListRecords extends React.Component {
                       </Input>
                     </FormGroup>
                   </div>
+                  <CSVLink data={rows}>Generate CSV</CSVLink>
                 </CardHeader>
-                <Table className="align-items-center table-flush" responsive>
-                  <thead className="thead-light">
-                    <tr>
-                      <th scope="col">Order Id</th>
-                      <th scope="col">Buyer Name</th>
-                      <th scope="col">Product Name</th>
-                      <th scope="col">Total Price</th>
-                      <th scope="col">Currency</th>
-                      <th scope="col">Payment Status</th>
-                      <th scope="col">Creation Date</th>
-                      <th scope="col">Dispatch</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {rows.map((row) => (
-                      <tr>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            {row.orderId}
+                <div>
+                  <FilterResults
+                    value={this.state.value}
+                    data={rows}
+                    renderResults={(rows) => (
+                      <div>
+                        <Table
+                          className="align-items-center table-flush"
+                          responsive
+                        >
+                          <thead className="thead-light">
+                            <tr>
+                              <th scope="col">Order Id</th>
+                              <th scope="col">Buyer Name</th>
+                              <th scope="col">Product Name</th>
+                              <th scope="col">Total Price</th>
+                              <th scope="col">Currency</th>
+                              <th scope="col">Payment Status</th>
+                              <th scope="col">Creation Date</th>
+                              <th scope="col">Dispatch</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {rows.map((row) => (
+                              <tr>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    {row.orderId}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    {row.buyer.username}
+                                  </div>
+                                </td>
+                                {row.lineItems.map((item) => (
+                                  <td>
+                                    <div
+                                      style={{ whiteSpace: "normal" }}
+                                      className="d-flex align-items-center"
+                                    >
+                                      {item.title}
+                                    </div>
+                                  </td>
+                                ))}
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    {row.pricingSummary.total.value}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    {row.pricingSummary.total.currency}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    {row.orderPaymentStatus}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    {row.creationDate}
+                                  </div>
+                                </td>
+                                <td>
+                                  <div className="d-flex align-items-center">
+                                    {this.renderDispatchButton(row)}
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </Table>
+                        {/* {data.map((el) => (
+                          <div>
+                            <span>{el.name}</span>
+                            <span>{el.password}</span>
+                            <span>{el.age}</span>
                           </div>
-                        </td>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            {row.buyer.username}
-                          </div>
-                        </td>
-                        {row.lineItems.map((item) => (
-                          <td>
-                            <div
-                              style={{ whiteSpace: "normal" }}
-                              className="d-flex align-items-center"
-                            >
-                              {item.title}
-                            </div>
-                          </td>
-                        ))}
-                        <td>
-                          <div className="d-flex align-items-center">
-                            {row.pricingSummary.total.value}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            {row.pricingSummary.total.currency}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            {row.orderPaymentStatus}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            {row.creationDate}
-                          </div>
-                        </td>
-                        <td>
-                          <div className="d-flex align-items-center">
-                            {this.renderDispatchButton(row)}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </Table>
+                        ))} */}
+                      </div>
+                    )}
+                  />
+                </div>
               </Card>
             </div>
           </Row>

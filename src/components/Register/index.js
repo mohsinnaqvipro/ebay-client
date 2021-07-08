@@ -2,7 +2,7 @@ import React from "react";
 import { withRouter } from "react-router-dom";
 import { connect } from "react-redux";
 import Animation from "../Animation/index";
-import { loginUser } from "../../actions/ebayActions";
+import { registerUser } from "../../actions/ebayActions";
 // reactstrap components
 import {
   Button,
@@ -17,12 +17,14 @@ import {
   Col,
   Alert,
 } from "reactstrap";
-class Login extends React.Component {
+class Register extends React.Component {
   constructor() {
     super();
     this.state = {
+      email: "",
       userName: "",
       password: "",
+      errors: null,
       loading: false,
     };
   }
@@ -33,6 +35,7 @@ class Login extends React.Component {
       if (prevProps.errors !== errors) {
         this.setState({
           loading: false,
+          errors: errors,
         });
       }
     }
@@ -41,7 +44,7 @@ class Login extends React.Component {
         this.setState({
           loading: false,
         });
-        this.props.history.push("/admin/login/Ebay");
+        this.props.history.push("/auth/dashboard");
       }
     }
   }
@@ -52,20 +55,27 @@ class Login extends React.Component {
     });
   }
 
-  handleLogin = (e) => {
+  goBack = (e) => {
+    window.history.back();
+  };
+
+  handleRegistration = (e) => {
     e.preventDefault();
-    const { userName, password } = this.state;
+    const { email, userName, password } = this.state;
+    const userId = localStorage.getItem("id");
     this.setState({
       loading: true,
     });
-    this.props.loginUser({
+    this.props.registerUser({
+      id: userId,
+      email: email,
       username: userName,
       password: password,
     });
   };
 
   render() {
-    const { errors } = this.props;
+    const { errors } = this.state;
     return (
       <>
         <div
@@ -83,10 +93,34 @@ class Login extends React.Component {
           <Col lg="4" md="7">
             <Card className="bg-secondary shadow border-0">
               <CardBody className="px-lg-5 py-lg-5">
+                <span style={{ color: "grey", cursor: "pointer" }}>
+                  <i
+                    className="fa fa-arrow-circle-left fa-3x"
+                    onClick={this.goBack}
+                  />
+                </span>
                 <div className="text-center text-muted mb-4">
-                  <small>Sign in with credentials</small>
+                  <small>Register New User</small>
                 </div>
                 <Form role="form">
+                  <FormGroup className="mb-3">
+                    <InputGroup className="input-group-alternative">
+                      <InputGroupAddon addonType="prepend">
+                        <InputGroupText>
+                          <i className="ni ni-email-83" />
+                        </InputGroupText>
+                      </InputGroupAddon>
+                      <Input
+                        id="email"
+                        placeholder="Email"
+                        type="email"
+                        value={this.state.email}
+                        onChange={(e) => {
+                          this.handleInputs(e);
+                        }}
+                      />
+                    </InputGroup>
+                  </FormGroup>
                   <FormGroup className="mb-3">
                     <InputGroup className="input-group-alternative">
                       <InputGroupAddon addonType="prepend">
@@ -130,9 +164,12 @@ class Login extends React.Component {
                   ) : (
                     <span> </span>
                   )}
-                  {errors.errorMessage ? (
+                  {errors ? (
                     <Alert color="danger">
-                      <strong>Error!</strong> {errors.errorMessage}
+                      <strong>Error!</strong>{" "}
+                      {errors.errorMessage
+                        ? errors.errorMessage
+                        : errors.message}
                     </Alert>
                   ) : null}
                   <div className="text-center">
@@ -140,9 +177,9 @@ class Login extends React.Component {
                       className="my-4"
                       color="primary"
                       type="button"
-                      onClick={this.handleLogin}
+                      onClick={this.handleRegistration}
                     >
-                      Sign in
+                      Register
                     </Button>
                   </div>
                 </Form>
@@ -156,8 +193,8 @@ class Login extends React.Component {
 }
 
 const mapStateToProps = (state) => ({
-  response: state.auth.userData,
+  response: state.auth.register,
   errors: state.errors,
 });
 
-export default connect(mapStateToProps, { loginUser })(withRouter(Login));
+export default connect(mapStateToProps, { registerUser })(withRouter(Register));
